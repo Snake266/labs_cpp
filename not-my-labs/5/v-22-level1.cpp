@@ -53,7 +53,7 @@ void second() {
     cin >> M;
     //Создаем матрицу
     double** matrix = new_matrix(N, M);
-
+    
 
 }
 
