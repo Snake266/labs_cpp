@@ -4,11 +4,89 @@
 #include <stdlib.h>
 #include <time.h>
 #include <locale.h>
-
+#include <string.h>
 using namespace std;
 
-void first() {
+char *substring(char *string, int position, int length)
+{
+   int c;
+ 
+   char* pointer = (char*)malloc(length+1);
+ 
+   for( c = 0 ; c < length ; c++ )
+      *(pointer+c) = *((string+position-1)+c);      
+       
+   *(pointer+c) = '\0';
+ 
+   return pointer;
+}
 
+void insert_substring(char *a, char *b, int position)
+{
+   char *f, *e;
+   int length;
+   
+   length = strlen(a);
+   
+   f = substring(a, 1, position - 1 );      
+   e = substring(a, position, length-position+1);
+
+   strcpy(a, "");
+   strcat(a, f);
+   free(f);
+   strcat(a, b);
+   strcat(a, e);
+   free(e);
+}
+
+void sort_str(char* str) {
+    // if (strcmp(words[i], words[j]) < 0)
+    char* tmp = (char*)malloc(strlen(str));
+    strcpy(tmp, str);
+    int space = 0;
+    for (int i = 0;i < strlen(str);i++) {
+        if (str[i] == ' ') {
+            space++;
+        }
+    }
+    // a b c d e f
+    char** p = (char**) malloc(space+1); 
+    for (int i = 0, j = 0, k = 0; j < strlen(str); j++)
+    {
+        if (str[j] == ' ')  
+        {    
+            p[i][k] = '\0';
+            i++;
+            k = 0;
+        }        
+        else
+             p[i][k++] = str[j];
+    }
+    for (int i = 0; i < space;i++)    //loop for sorting
+    {
+        for (int j = i + 1;j <= space;j++)
+        {
+            if ((strcmp(p[i], p[j]) > 0))
+            {
+                strcpy(cmp, p[i]);
+                strcpy(p[i], p[j]);
+                strcpy(p[j], cmp);
+            }
+        }
+    }
+}
+
+void first() {
+    char* text[2];
+    cin.ignore(INT32_MAX, '\n');
+    for(int i = 0; i < 2; ++i) {
+        char buf[160];
+        cout << "Введите текст на латинице: ";
+        cin.getline(buf, 160);
+        text[i] = (char*)malloc(strlen(buf));
+        strcpy(text[i], buf);
+    }
+    sort_str(text[1]);
 }
 
 

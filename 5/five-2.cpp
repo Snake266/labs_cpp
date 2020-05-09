@@ -27,22 +27,26 @@ void print(int* matrix, int N, int M) {
 }
 
 
-void str_word_with_bletter(char** str, int count, char sym) {
-    int size = 5;
-    char* res = (char*)malloc(sizeof(char) * size);
-    for(int i = 0; i < count; ++i) {
-        char* search = str[i];
-        while((search = strchr(search, sym)) != NULL) {
-            char* tmp = search;
-            int ch = 0;
-            while(*search != ' ') {
-                ++ch;
-                ++search;
-            }
+char** str_word_with_bletter(char* str, char sym) {
+    int size = 1, ch = 0;
+    char** strs = (char**)malloc(sizeof(char*) * size);
+
+    for(int i = 0; i < strlen(str); ++i) {
+        if(ch == size) {
+            size++;
+            strs = (char**)realloc(strs, sizeof(char*) * size);
+        }
+
+        if(str[i] == sym) {
+            strs[ch] = &str[i];
+            ch++;
         }
     }
-    //return res;
+    return strs;
 }
+        
+
+    
 
 //Функция, которая изменяет четные и нечетные строки
 //В нечетных строках слова начинающиеся с заданного символа пишутся с заглавной буквы
@@ -97,7 +101,7 @@ void first_task() {
             text = (char**)realloc(text, size); //и увеличиваем матрицу
         }
         
-        text[ch] = (char*)malloc(strlen(buf)); //выделяем память для новой строчки
+        text[ch] = (char*)malloc(sizeof(char) * strlen(buf)); //выделяем память для новой строчки
         strcpy(text[ch], buf); //копируем данные из буфера в нашу строчку
         
         ch++; //увеличиваем индекс на единицу
@@ -108,11 +112,12 @@ void first_task() {
         std::cout << text[i] << std::endl;
     }
     
-    std::cout << "Введите символ: ";
-    char sm = 'a';
-    std::cin >> sm;
+    char** s = str_word_with_bletter(text[0], 'a');
+    for(int i = 0; s[i]; ++i) {
+        std::cout << s[i] << std::endl;
+    }
+    /*
     
-    function(text, ch, sm);
 
     //Находим самую длинную строку чтобы по ней вровнять в правый край
     int maxlen = strlen(text[0]);
@@ -128,6 +133,7 @@ void first_task() {
     for(int i = 0; i < ch; ++i) //очищаем строки матрицы
         free(text[i]);
     free(text); //чистим саму матрицу
+    */
 }
 
 
