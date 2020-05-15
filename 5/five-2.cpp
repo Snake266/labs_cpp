@@ -5,31 +5,10 @@
 #include <string.h>
 #include <locale.h>
 
-//Функция, которая возвращает указатель на заполненую матрицу
-int* initmatrix(int N, int M) {
-    int* matr = (int*)malloc(N * M * sizeof(int));
-    for(int i = 0; i < N; ++i) {
-        for(int j = 0; j < M; ++j) {
-            *(matr + i*N + j) = rand() % 100;
-        }
-    }
-    return matr;
-}
-
-//Функция для печати матрицы на экран
-void print(int* matrix, int N, int M) {
-    for(int i = 0; i < N; ++i) {
-        for(int j = 0; j < M; ++j) {
-            std::cout << std::setw(5) << *(matrix + i*N + j);
-        }
-        std::cout << std::endl;
-    }
-}
-
 
 char** str_word_with_bletter(char* str, char sym) {
     int size = 1, ch = 0;
-    char** strs = (char**)malloc(sizeof(char*) * size);
+    char** strs = (char**)malloc(sizeof(char) * size);
 
     for(int i = 0; i < strlen(str); ++i) {
         if(ch == size) {
@@ -37,15 +16,24 @@ char** str_word_with_bletter(char* str, char sym) {
             strs = (char**)realloc(strs, sizeof(char*) * size);
         }
 
-        if(str[i] == sym) {
+        if(str[0] == sym  || (str[i] == sym && str[i-1] == ' ')) {
             strs[ch] = &str[i];
             ch++;
         }
     }
     return strs;
 }
-        
 
+//Функция удаляет слово, с которого начинается переданный указатель
+void delete_word(char* str) {
+    int i = 0;
+
+    while(str[i]) {
+        i++;
+        if(str[i] == ' ') break;
+    }
+    memmove(str, str+i, strlen(str+i) + 1);
+}
     
 
 //Функция, которая изменяет четные и нечетные строки
@@ -53,18 +41,23 @@ char** str_word_with_bletter(char* str, char sym) {
 //В четных строках слова начинающиеся с заданного символа удаляются из строки
 void function(char** str, int count, char sym) {
     for(int i = 0; i < count; ++i) {
+        char** tmp = str_word_with_bletter(str[i], sym);
         if(i % 2 == 0) {
-            int len = strlen(str[i]);
-            
-        } else {
             int j = 0;
-            while(str[i][j]) {
-                if(str[i][j] == sym && (j == 0 ||str[i][j-1] == ' ' )) {
-                    str[i][j] = toupper(sym);
-                }
+            while(tmp[j]) {
+                delete_word(tmp[j]);
+                j++;
+            }
+        } else {
+            
+            int j = 0;
+            while(tmp[j]) {
+                *tmp[j] = toupper(sym);
                 j++;
             }
         }
+        for(int j = 0; tmp[j]; ++j) free(tmp[j]);
+        free(tmp);
     }
 }
 
@@ -101,23 +94,25 @@ void first_task() {
             text = (char**)realloc(text, size); //и увеличиваем матрицу
         }
         
-        text[ch] = (char*)malloc(sizeof(char) * strlen(buf)); //выделяем память для новой строчки
+        text[ch] = (char*)malloc(sizeof(char) * strlen(buf)+ 1); //выделяем память для новой строчки
         strcpy(text[ch], buf); //копируем данные из буфера в нашу строчку
         
         ch++; //увеличиваем индекс на единицу
     }
 
+    std::cout << "Введите символ: ";
+    char sym = 'a';
+    std::cin >> sym;
+
+
+    
+    function(text, ch, sym); 
+
     std::cout << "Введенные строки" << std::endl;
     for(int i = 0; i < ch; ++i) {
         std::cout << text[i] << std::endl;
     }
-    
-    char** s = str_word_with_bletter(text[0], 'a');
-    for(int i = 0; s[i]; ++i) {
-        std::cout << s[i] << std::endl;
-    }
-    /*
-    
+   
 
     //Находим самую длинную строку чтобы по ней вровнять в правый край
     int maxlen = strlen(text[0]);
@@ -133,14 +128,16 @@ void first_task() {
     for(int i = 0; i < ch; ++i) //очищаем строки матрицы
         free(text[i]);
     free(text); //чистим саму матрицу
-    */
+
 }
 
 
 int* find_max_of_zones(int* matrix, int N, int M) {
-    int* minimax = (int*)malloc(sizeof(int) * 2);
-    minimax[0] = *matrix; //максимум слева
-    minimax[1] = *matrix; //максимум справа
+    int* minimax = (int*)malloc(2 * sizeof(int));
+    if(!minimax) std::cout << "fucked" << std::endl;
+    perror("malloc error");
+    minimax[0] = matrix[0]; //максимум слева
+    minimax[1] = matrix[0]; //максимум справа
 
     for(int i = 0; i < N; ++i) {
         for(int j = 0; j < M; ++j) {
@@ -163,6 +160,30 @@ int* find_max_of_zones(int* matrix, int N, int M) {
 
     return minimax;
 }
+
+//Функция, которая возвращает указатель на заполненую матрицу
+int* initmatrix(int N, int M) {
+    int* matr = (int*)malloc(sizeof(int[N][M]));
+    if(!matr) std::cout << "fucked" << std::endl;
+    for(int i = 0; i < N; ++i) {
+        for(int j = 0; j < M; ++j) {
+            matr[i*M + j] = rand() % 100;
+        }
+    }
+    return matr;
+}
+
+//Функция для печати матрицы на экран
+void print(int* matrix, int N, int M) {
+    for(int i = 0; i < N; ++i) {
+        for(int j = 0; j < M; ++j) {
+            std::cout << std::setw(5) << matrix[i*M+j];
+        }
+        std::cout << std::endl;
+    }
+}
+
+
 
 //Второе задание
 void second_task() {
