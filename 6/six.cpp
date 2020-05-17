@@ -188,10 +188,7 @@ void print_table(std::vector<parcel_t*>& p) {
             std::cout << '-';
         }
         std::cout << std::endl;
-        
-        /*for(auto& i : p) {
-            print_parcel(*i);
-        }*/
+
         for(int i = 0; i < p.size(); ++i) {
             print_parcel(p[i]);
         }
