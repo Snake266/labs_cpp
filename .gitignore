@@ -3,3 +3,4 @@
 vgcore.*
 main.c
 *.txt
+tests/

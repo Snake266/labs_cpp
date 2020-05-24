@@ -8,9 +8,10 @@
 
 //Копирует строку и возвращает указатель новую строку
 char* alloc_and_copy(char* str) {
-    char* res = new char[strlen(str)];
+    char* res = new char[strlen(str) + 1];
     if(!res) throw std::exception();
-    std::strncpy(res, str, std::strlen(str));
+    strcpy(res, str);
+    res[strlen(res)] = '\0';
     return res;
 }
 
@@ -118,6 +119,7 @@ char* promt(const char* message) {
     std::cin.getline(buf, 80);
     char* dest = new char[strlen(buf) + 1];
     strcpy(dest, buf);
+    dest[strlen(dest)] = '\0';
     return dest;
 }
 
