@@ -1,7 +1,6 @@
 #include <iostream>
 #include <iomanip>
 #include <stdio.h>
-#include <forward_list>
 #include <iterator>
 #include <cstring>
 
@@ -11,9 +10,10 @@
 
 //Копирует строку и возвращает указатель новую строку
 char* alloc_and_copy(char* str) {
-    char* res = new char[strlen(str)];
+    char* res = new char[strlen(str) + 1];
     if(!res) throw std::exception();
-    std::strncpy(res, str, std::strlen(str));
+    strcpy(res, str);
+    res[strlen(res)] = '\0';
     return res;
 }
 
@@ -64,49 +64,67 @@ struct parcel_t {
 
 };
 
+typedef struct Node {
+    parcel_t* data;
+    struct Node* next;
+} Node;
 
 //Функция, которая добавляет в конец коллекции новую поссылку
-void new_parcel(std::forward_list<parcel_t*>*);
+void new_parcel(Node**);
 
 //Печатаем таблицу
 void print_parcel(parcel_t p);
 
-void print_table(std::forward_list<parcel_t*>& p);
+void print_table(Node*);
 
 //ищет поссылку по фамилии и имени отправителя
-void find_by_sender(std::forward_list<parcel_t*>&);
+void find_by_sender(Node*);
 
 //ищет поссылку с весом больше заданного
-void find_by_weight(std::forward_list<parcel_t*>&);
+void find_by_weight(Node*);
 
 //вставляет поссылку в конец списка
-void add(std::forward_list<parcel_t*>&, parcel_t*);
+void add(Node**, parcel_t*);
 
 //находит и удаляет поссылки с весом меньше заданного
-void find_and_delete(std::forward_list<parcel_t*>&);
+void find_and_delete(Node*);
 
 //Сортирует список по фамилии отправителя
-void sort_by_last_name(std::forward_list<parcel_t*>&);
+void sort_by_last_name(Node**);
 
 //Сохраняет поссылку в формате
 //s_last_name|s_first_name|s_adress|r_last_name|r_first_name|r_adress|weight
-void save_list(std::forward_list<parcel_t*>&);
+void save_list(Node*);
 
 //Вытаскивает данные из файла, написанного в вышеизложенном формате
-void load_list(std::forward_list<parcel_t*>&);
+void load_list(Node*);
+
+void clear_nodes(Node* head) {
+    if(head == NULL) return;
+    else {
+        Node* prev = NULL;
+        while(head->next) {
+            prev = head;
+            head = head->next;
+            
+            delete prev->data;
+            delete prev;
+        }
+        delete head->data;
+        delete head;
+    }
+}
 
 int main() {
     setlocale(LC_ALL, "Russian");
-    //Будем использовать std::vector, чтобы не писать свой std::vector
-    //вектор аллоцирует данные в динамической памяти, поэтому все по требованиям
-    std::forward_list<parcel_t*> parcels; 
+    Node* parcels = NULL; 
     load_list(parcels);
     char choice = '0';
     do {
         std::cout << "Что вы хотите сделать?" << std::endl;
         std::cout << "1. Добавить новую поссылку?\n2. Распечатать все посслыки\n" 
                   << "3. Найти все поссылки по их отправителю\n4. Найти поссылки больше заданного веса\n" 
-                  << "5. Удалить поссылки нижу заданного веса\n6. Сортировать список поссылок по фамилии отправителя\n"
+                  << "5. Удалить поссылки ниже заданного веса\n6. Сортировать список поссылок по фамилии отправителя\n"
                   << "0. Выйти и сохранить данные\n(1/2/3/4/0): ";
         std::cin >> choice;
         std::cout << std::endl;
@@ -128,10 +146,11 @@ int main() {
             find_and_delete(parcels);
             break;
         case '6':
-            sort_by_last_name(parcels);
+            sort_by_last_name(&parcels);
             break;
         case '0':
             save_list(parcels);
+            clear_nodes(parcels);
             break;
         default:
             std::cout << "wrong argument" << std::endl;
@@ -143,12 +162,20 @@ int main() {
 }
 
 
-void add(std::forward_list<parcel_t*>& list, parcel_t* p) {
-    auto before_end = list.before_begin();
-    for(auto& _ : list)
-        before_end++;
-    
-    list.insert_after(before_end, p);
+void add(Node** head, parcel_t* p) {
+    Node* node = new Node;
+    node->data = p;
+    node->next = NULL;
+
+    if(*head == NULL) {
+        *head = node;
+        return;
+    }
+    Node* tmp = *head;
+    while(tmp->next) {
+        tmp = tmp->next;
+    }
+    tmp->next = node;
 }
 
 //Пишет message и возвращает введенную строку
@@ -158,10 +185,11 @@ char* promt(const char* message) {
     std::cin.getline(buf, 80);
     char* dest = new char[strlen(buf) + 1];
     strcpy(dest, buf);
+    dest[strlen(dest)] = '\0';
     return dest;
 }
 
-void new_parcel(std::forward_list<parcel_t*>* p) {
+void new_parcel(Node** head) {
     std::cout << std::endl;
     for(int i = 0; i < sep_len; ++i) {
         std::cout << '-';
@@ -189,7 +217,7 @@ void new_parcel(std::forward_list<parcel_t*>* p) {
     std::cin >> weight;
     
     //Добавляем в конец списка объект
-    add(*p, new parcel_t(s_last_name, s_first_name, s_adress, 
+    add(head, new parcel_t(s_last_name, s_first_name, s_adress, 
                         r_last_name, r_first_name, r_adress, weight));
 
     //Чистим память
@@ -221,20 +249,33 @@ void print_parcel(parcel_t* p) {
     std::cout << std::endl;
 }
 
-void print_table(std::forward_list<parcel_t*>& p) {
-    if(p.empty()) std::cout << "Поссылок нет" << std::endl;
+void print_table(Node* head) {
+    if(head == NULL)  {
+        for(int i = 0; i < sep_len; ++i) {
+            std::cout << '-';
+        }
+        std::cout << std::endl;
+        
+        std::cout << "Поссылок нет" << std::endl;
+        
+        for(int i = 0; i < sep_len; ++i) {
+            std::cout << '-';
+        }
+    }
     else {
         for(int i = 0; i < sep_len; ++i) {
             std::cout << '-';
         }
         std::cout << std::endl;
-        for(auto& i : p) {
-            print_parcel(i);
+        Node* tmp = head;
+        while(tmp) {
+            print_parcel(tmp->data);
+            tmp = tmp->next;
         }
     }
 }
 
-void find_by_sender(std::forward_list<parcel_t*>& p) {
+void find_by_sender(Node* head) {
     for(int i = 0; i < sep_len; ++i) std::cout << '-';
     std::cout << std::endl;
 
@@ -246,17 +287,19 @@ void find_by_sender(std::forward_list<parcel_t*>& p) {
     std::cin.getline(sender_fname, 80);
     
     //Проходим по всему массиву
-    for(auto& i : p) {
-        if(!strncmp(i->s_first_name, sender_fname, strlen(i->s_first_name)) 
-           && !strncmp(i->s_last_name, sender_lname, strlen(i->s_last_name))) {
-            print_parcel(i);
+    Node* tmp = head;
+    while(tmp) {
+        if(!strncmp(tmp->data->s_first_name, sender_fname, strlen(tmp->data->s_first_name))
+        && !strncmp(tmp->data->s_last_name, sender_lname, strlen(tmp->data->s_last_name))) {
+            print_parcel(tmp->data);
         }
     }
+
     for(int i = 0; i < sep_len; ++i) std::cout << '-';
     std::cout << std::endl;
 }
 
-void find_by_weight(std::forward_list<parcel_t*>& p) {
+void find_by_weight(Node* head) {
 
     for(int i = 0; i < sep_len; ++i) std::cout << '-';
     std::cout << std::endl;
@@ -264,16 +307,21 @@ void find_by_weight(std::forward_list<parcel_t*>& p) {
     std::cout << "Введите вес поссылки: ";
     std::cin >> w;
 
-    std::forward_list<parcel_t*> tmp;
-    
-    for(auto i : p) {
-        if(i->weight > w) add(tmp, i);
-    }
-
-    print_table(tmp);
+    while(head) {
+        if(head->data->weight > w) {
+            print_parcel(head->data);
+        }
+        head = head->next;
+    } 
 }
 
-void find_and_delete(std::forward_list<parcel_t*>& p) {
+void delete_node(Node* prev, Node* next) {
+    delete prev->next->data;
+    delete prev->next;
+    prev->next = next;
+}
+
+void find_and_delete(Node* head) {
     double w;
     std::cout << "Введите вес поссылки: ";
     std::cin >> w;
@@ -286,64 +334,118 @@ void find_and_delete(std::forward_list<parcel_t*>& p) {
         std::cout << "Введите вес поссылки: ";
         std::cin >> w;
     }
-
-    p.remove_if([w](parcel_t* a) {
-        return a->weight < w;
-    });
-
-}
-
-void sort_by_last_name(std::forward_list<parcel_t*>& p) {
-    p.sort([](parcel_t* a1, parcel_t* a2) {
-        if(strcmp(a1->s_last_name, a2->s_last_name) < 0) {
-            return true;
-        } else {
-            return false;
+    Node* prev = NULL;
+    while(head->next) {
+        if(head->data->weight < w) {
+            if(prev == NULL) {
+                delete head->data;
+                Node* tmp = head;
+                head = head->next;
+                delete tmp;
+            } else {
+                delete_node(prev, head->next);
+            }
         }
-    });
+        prev = head;
+        head = head->next;
+    }
+
 }
 
-void save_list(std::forward_list<parcel_t*>& p) {
-    FILE* f = fopen("db.txt", "w");
-    if(!f) {
-     std::cout << "Не удается создать/открыть файл!" << std::endl;
-     return;
-    }
-    rewind(f);
-    for(auto i : p) {
-        fprintf(f, "%s|", i->s_last_name);
-        fprintf(f, "%s|", i->s_first_name);
-        fprintf(f, "%s|", i->s_adress);
-        fprintf(f, "%s|", i->r_last_name);
-        fprintf(f, "%s|", i->r_first_name);
-        fprintf(f, "%s|", i->r_adress);
-        fprintf(f, "%lf\n", i->weight);
-    }
-    fclose(f);
+
+void sortedInsert(Node** head, struct Node* new_node) 
+{ 
+    Node* current; 
+    if (*head == NULL || (*head)->data >= new_node->data) 
+    { 
+        new_node->next = *head; 
+        *head = new_node; 
+    } 
+    else
+    { 
+        /* Locate the node before the point of insertion */
+        current = *head; 
+        while (current->next!=NULL && 
+               current->next->data < new_node->data) 
+        { 
+            current = current->next; 
+        } 
+        new_node->next = current->next; 
+        current->next = new_node; 
+    } 
+} 
+
+void sort_by_last_name(Node** head) {
+    std::cout << "not implemented" << std::endl;
+    Node *sorted = NULL; 
+  
+    Node *current = *head; 
+    while (current != NULL) 
+    { 
+        struct Node *next = current->next; 
+  
+        sortedInsert(&sorted, current); 
+  
+        current = next; 
+    } 
+  
+    *head = sorted; 
 }
 
-void load_list(std::forward_list<parcel_t*>& p) {
+void save_list(Node* head) {
+    FILE* file = fopen("db.txt", "w");
+    if(!file) {
+        std::cout << "Не удается создать/открыть файл!" << std::endl;
+        exit(-1);
+    }
+    rewind(file);
+    while(head) {
+        fprintf(file, "%s|", head->data->s_last_name);
+        fprintf(file, "%s|", head->data->s_first_name);
+        fprintf(file, "%s|", head->data->s_adress);
+        fprintf(file, "%s|", head->data->r_last_name);
+        fprintf(file, "%s|", head->data->r_first_name);
+        fprintf(file, "%s|", head->data->r_adress);
+        fprintf(file, "%lf\n", head->data->weight);
+        head = head->next;
+    }
+    fclose(file);
+}
+
+void load_list(Node* head) {
     FILE* tmpfile = fopen("db.txt", "a");// нужно для того чтобы создать файл если его нет
+    if(!tmpfile) {
+        std::cout << "Проблемы с файлом!" << std::endl;
+        exit(-1);
+    }
     fclose(tmpfile);
     
     FILE* f = fopen("db.txt", "r");
-
+    if(!f) {
+        std::cout << "Проблемы с файлом!" << std::endl;
+        exit(-1);
+    }
+    
     fseek(f, 0, SEEK_END); //Переносим "курсор" в начало файла
-    if(ftell(f) == 0) {
+    int len = ftell(f);
+    if(len == 0) {
         std::cout << "База данных пуста" << std::endl;
         return;
     }
-    
-    char buf[500]; //тут лучше на буфере не жалеть, т.к формат сохранения будет таков:
+
+    //char buf[500]; //тут лучше на буфере не жалеть, т.к формат сохранения будет таков:
     // "Фамилия_отправителя|имя_отправителя|..." т.е. одна поссылка - одна строка
     // в качестве разделителя будет выступать 
     // вертикальная черта, таков способ очень удобен тем, что мы за одну строку читаем всю
     // нужную информацию для создания объекта
-    while(fgets(buf, 500, f) != NULL) {
+    char* buf = NULL;
+    size_t lenn = 0;
+    fseek(f, 0, SEEK_END);
+    while(getline(&buf, &lenn, f) != -1) {
         char* tmp = new char[strlen(buf) + 1];
         strcpy(tmp, buf);
 
-        tmp[strlen(tmp) - 1] = '\0'; //Убираем лишний \n в конце
+        tmp[strlen(tmp) - 1] = '\0'; //Убираем \n в конце
 
         char* vars[7]; //Сюда мы будем складывать то что мы распарсили из строки
 
@@ -352,11 +454,14 @@ void load_list(std::forward_list<parcel_t*>& p) {
         while(token) {
             vars[i] = new char[strlen(token) + 1];
             strcpy(vars[i], token);
+            vars[i][strlen(vars[i])] = '\0';
             i++;
             token = strtok(NULL, "|");
         }
-        add(p, new parcel_t(vars[0], vars[1], vars[2], vars[3], vars[4], vars[5], atof(vars[6])));
+        add(&head, new parcel_t(vars[0], vars[1], vars[2], vars[3], vars[4], vars[5], atof(vars[6])));
         
+
+        //для легкости дебага придется написать такое...
         delete[] vars[0];
         delete[] vars[1];
         delete[] vars[2];
