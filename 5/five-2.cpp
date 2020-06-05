@@ -5,10 +5,14 @@
 #include <string.h>
 #include <locale.h>
 
+#define MYDEBUG
 
-char** str_word_with_bletter(char* str, char sym) {
+/* Мертвый код начало на 173 строке
+//Функция возвращает массив указателей, указывающих на начало слова
+//начинающегося с заданной буквы
+char** str_word_with_bletter(char* str, char sym, int* _size) {
     int size = 1, ch = 0;
-    char** strs = (char**)malloc(sizeof(char) * size);
+    char** strs = (char**)malloc(sizeof(char*) * size);
 
     for(int i = 0; i < strlen(str); ++i) {
         if(ch == size) {
@@ -21,45 +25,69 @@ char** str_word_with_bletter(char* str, char sym) {
             ch++;
         }
     }
+    *_size = ch;
     return strs;
 }
 
 //Функция удаляет слово, с которого начинается переданный указатель
 void delete_word(char* str) {
     int i = 0;
-
     while(str[i]) {
-        i++;
         if(str[i] == ' ') break;
+        i++;
     }
     memmove(str, str+i, strlen(str+i) + 1);
 }
-    
 
+//char* next_word(char* str, char sym) {
+
+//}
+
+
+#ifdef MYDEBUG
+
+void function(char** str, int count, char sym) {
+    std::cout << "Строки: " << std::endl;
+    for(int i = 0; i < count; ++i) {
+        std::cout << str[i] << std::endl;
+    }
+
+    for(int i = 0; i < 25; ++i) std::cout << "-";
+    std::cout << std::endl;
+    for(int i = 0; i < count; ++i) {
+        int size = 0;
+        char** tmp = str_word_with_bletter(str[i], sym, &size);
+        for(int j = 0; j < size; ++j) {
+            std::cout << tmp[j] << std::endl;
+            
+        }
+    }
+}
+
+#else
 //Функция, которая изменяет четные и нечетные строки
 //В нечетных строках слова начинающиеся с заданного символа пишутся с заглавной буквы
 //В четных строках слова начинающиеся с заданного символа удаляются из строки
 void function(char** str, int count, char sym) {
     for(int i = 0; i < count; ++i) {
-        char** tmp = str_word_with_bletter(str[i], sym);
-        if(i % 2 == 0) {
-            int j = 0;
-            while(tmp[j]) {
+        int size = 0;
+        char** tmp = str_word_with_bletter(str[i], sym, &size);
+        if(i+1 % 2 == 0) {
+            for(int j = 0; i < size; ++j) {
                 delete_word(tmp[j]);
-                j++;
             }
         } else {
-            
-            int j = 0;
-            while(tmp[j]) {
-                *tmp[j] = toupper(sym);
-                j++;
+
+            for(int j = 0; i < size; ++j) {
+                tmp[j][0] = toupper(sym);
             }
         }
-        for(int j = 0; tmp[j]; ++j) free(tmp[j]);
+        //for(int j = 0; tmp[j]; ++j) free(tmp[j]);
         free(tmp);
     }
 }
+
+#endif // DEBUG
 
 //Функция для печати текста, выравнивая его по правому краю
 void print_right_aligned(char* str, int width) {
@@ -74,8 +102,8 @@ void first_task() {
             << "реализовать функцию для выравнивания текста по правому краю" << std::endl;
     
     
-    int size = 10; //кол-во строк матрицы
-    char** text = (char**)malloc(sizeof(char*) * size);//выделяем матрицу с 10 (size) строками
+    unsigned int size = 10; //кол-во строк матрицы
+    char** text = (char**)calloc(size, sizeof(char*));
     int ch = 0; //индекс записи строки
     
     std::cin.ignore(INT32_MAX, '\n');
@@ -94,7 +122,8 @@ void first_task() {
             text = (char**)realloc(text, size); //и увеличиваем матрицу
         }
         
-        text[ch] = (char*)malloc(sizeof(char) * strlen(buf)+ 1); //выделяем память для новой строчки
+        //text[ch] = (char*)malloc(sizeof(char) * (strlen(buf)    + 1)); //выделяем память для новой строчки
+        text[ch] = (char*)calloc(strlen(buf) + 1, sizeof(char));
         strcpy(text[ch], buf); //копируем данные из буфера в нашу строчку
         
         ch++; //увеличиваем индекс на единицу
@@ -120,22 +149,22 @@ void first_task() {
         if(maxlen < strlen(text[i])) maxlen = strlen(text[i]);
     }
     
+    std::cout << "Строки, выровненные по правому краю: " << std::endl;
     //печатаем изменненый текст выровненый по правому краю
     for(int i = 0; i < ch; ++i) {
         print_right_aligned(text[i], maxlen);
     }
 
-    for(int i = 0; i < ch; ++i) //очищаем строки матрицы
-        free(text[i]);
+    //for(int i = 0; i < ch; ++i) //очищаем строки матрицы
+    //    free(text[i]);
     free(text); //чистим саму матрицу
 
 }
-
+//////////////////////////////////////////////////////////////////////////////////
+*/
 
 int* find_max_of_zones(int* matrix, int N, int M) {
     int* minimax = (int*)malloc(2 * sizeof(int));
-    if(!minimax) std::cout << "fucked" << std::endl;
-    perror("malloc error");
     minimax[0] = matrix[0]; //максимум слева
     minimax[1] = matrix[0]; //максимум справа
 
@@ -164,7 +193,6 @@ int* find_max_of_zones(int* matrix, int N, int M) {
 //Функция, которая возвращает указатель на заполненую матрицу
 int* initmatrix(int N, int M) {
     int* matr = (int*)malloc(sizeof(int[N][M]));
-    if(!matr) std::cout << "fucked" << std::endl;
     for(int i = 0; i < N; ++i) {
         for(int j = 0; j < M; ++j) {
             matr[i*M + j] = rand() % 100;
@@ -214,14 +242,11 @@ int main() {
     srand(time(NULL));
     char choice = '0';
     do {
-        std::cout << "1. First task\n2. Second task\n0. Exit\n(1/2/0): ";
+        std::cout << "2. Second task\n0. Exit\n(2/0): ";
         std::cin >> choice;
         std::cout << std::endl;
         switch (choice)
         {
-        case '1':
-            first_task();
-            break;
         case '2':
             second_task();
             break;
